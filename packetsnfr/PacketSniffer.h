@@ -7,6 +7,7 @@ class PacketSniffer
 {
 	private:
 		static const int MAX_PACKET_SIZE;
+		static const short IP_LENGTH;
 		char errBuff[PCAP_ERRBUF_SIZE];
 		//device list and list items of all devices that can be used to sniff traffic
 		pcap_if_t *m_deviceList;
@@ -24,6 +25,11 @@ class PacketSniffer
 
 		void DisplayDevices( pcap_if_t *device, int deviceNumber);
 		pcap_if_t *GetDevice( int deviceIndex);
+
+		//Returns a character pointer of the conversion from a numerical IP address to a string
+		char *iptostr( u_long ip);
+		//Returns a character pointer of the conversion from a numerical IP6 address to a string
+		char *ip6tostr( struct sockaddr *sockaddr, char *address, int addrlen );
 	public: 
 		PacketSniffer();
 		~PacketSniffer();
@@ -35,4 +41,5 @@ class PacketSniffer
 		int GetDeviceCount();
 		//Recursively gets all device names and descriptions
 		void DisplayAllDevices();
+		void DisplayDeviceInformation( int deviceIndex );
 };
