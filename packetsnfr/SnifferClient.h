@@ -5,10 +5,13 @@
 
 using namespace std;
 
+//Simple command prompt client for testing purposes
 class SnifferClient {
 	private:
 		//handle to the sniffer manager
 		SnifferManager *m_manager;
+
+		void DisplayMenu();
 	public:
 		SnifferClient();
 		~SnifferClient();
