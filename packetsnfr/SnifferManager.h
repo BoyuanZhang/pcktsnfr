@@ -4,6 +4,8 @@ class SnifferManager {
 	private:
 		//Handle to the packet sniffer that this class manages
 		PacketSniffer *m_sniffer;
+
+		bool validateDevice(int deviceIndex);
 	public:
 		SnifferManager();
 		~SnifferManager();
@@ -14,4 +16,5 @@ class SnifferManager {
 		bool GetPacket();
 		bool OpenDevice( int deviceIndex );
 		void DisplayDevices();
+		void DisplayDeviceInformation( int deviceIndex);
 };
