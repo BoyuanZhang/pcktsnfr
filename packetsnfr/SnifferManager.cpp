@@ -42,6 +42,21 @@ void SnifferManager::DisplayDeviceInformation( int deviceIndex )
 	}
 }
 
+void SnifferManager::CloseSession()
+{
+	m_sniffer->CloseCurrentSession();
+}
+
+void SnifferManager::SetFilter( char* filter )
+{
+	m_sniffer->SetFilter( filter );
+}
+
+void SnifferManager::ClearFilter()
+{
+	m_sniffer->ClearFilter();
+}
+
 bool SnifferManager::GetPacket()
 {
 	if( m_sniffer->CaptureNextPacket())
