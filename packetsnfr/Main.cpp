@@ -17,15 +17,6 @@ int main()
 	//Sniffer has finnished running, delete it and continue to program exit
 	if( client != NULL )
 		delete client;
-	
-	//For debug mode, so the console does not close immediately
-	#ifndef DEBUG
-
-	string line;
-	cout << "Press any key to exit.";
-	getline( cin, line );
-
-	#endif
 
 	return 0;
 }
