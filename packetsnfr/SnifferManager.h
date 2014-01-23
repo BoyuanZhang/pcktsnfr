@@ -17,4 +17,7 @@ class SnifferManager {
 		bool OpenDevice( int deviceIndex );
 		void DisplayDevices();
 		void DisplayDeviceInformation( int deviceIndex);
+		void SetFilter( char* filter );
+		void ClearFilter();
+		void CloseSession();
 };
