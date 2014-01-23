@@ -9,6 +9,8 @@ class PacketSniffer
 		static const int MAX_PACKET_SIZE;
 		static const short IP_LENGTH;
 		char errBuff[PCAP_ERRBUF_SIZE];
+		//filter
+		char filterStr[256];
 		//device list and list items of all devices that can be used to sniff traffic
 		pcap_if_t *m_deviceList;
 		pcap_if_t *m_device;
@@ -30,6 +32,8 @@ class PacketSniffer
 		char *iptostr( u_long ip);
 		//Returns a character pointer of the conversion from a numerical IP6 address to a string
 		char *ip6tostr( struct sockaddr *sockaddr, char *address, int addrlen );
+		//Setting filters on packets
+		int CompileAndSetIPV4Filter(pcap_if_t *device );
 	public: 
 		PacketSniffer();
 		~PacketSniffer();
@@ -42,4 +46,7 @@ class PacketSniffer
 		//Recursively gets all device names and descriptions
 		void DisplayAllDevices();
 		void DisplayDeviceInformation( int deviceIndex );
+		void SetFilter( char* filter );
+		void ClearFilter();
+		void CloseCurrentSession();
 };
