@@ -43,6 +43,16 @@ void SnifferClient::Menu()
 				m_manager->DisplayDeviceInformation( selection );
 				break;
 			case 3:
+				char filter[50];
+				cin.ignore();
+				cout << "Please enter a valid filter: ";
+				cin.getline( filter, 50);
+				m_manager->SetFilter( filter );
+				break;
+			case 4:
+				m_manager->ClearFilter();
+				break;
+			case 5:
 				cout << "Please select a device to listen in on: ";
 				cin>> selection;
 
@@ -54,9 +64,11 @@ void SnifferClient::Menu()
 
 					//Listen on device until the manager is unable to get the next packet, or the user has pressed escape
 					while( m_manager->GetPacket() && !GetAsyncKeyState(VK_ESCAPE) );
+					//close and deallocate resources associated with packet capture session
+					m_manager->CloseSession();
 				}
 				break;
-			case 4:
+			case 6:
 				quit = true;
 				break;
 			default:
@@ -75,6 +87,8 @@ void SnifferClient::DisplayMenu()
 	cout << "Menu Options ----------------" << endl;
 	cout << "1: Display all devices " << endl;
 	cout << "2: Display advanced information on device" << endl;
-	cout << "3: Begin Capturing packets on device" << endl;
-	cout << "4: Quit"  << endl;
+	cout << "3: Set a filter for packet capture" << endl;
+	cout << "4: Clear packet filter" << endl;
+	cout << "5: Begin Capturing packets on device" << endl;
+	cout << "6: Quit"  << endl;
 }
