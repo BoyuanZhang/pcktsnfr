@@ -1,5 +1,6 @@
 #include "PacketSniffer.h"
-//the outputs in here
+#include "FilterUtility.h"
+
 using namespace std;
 
 const int PacketSniffer::MAX_PACKET_SIZE = 65536;
@@ -18,7 +19,11 @@ PacketSniffer::~PacketSniffer()
 
 bool PacketSniffer::Initialize()
 {
-	//pcap error buffer
+	//Clear garbage in filter, should probably define 256 later
+	for( int i = 0; i < 256; i++)
+	{
+		filterStr[i] = '\0';
+	}
 
 	if( pcap_findalldevs_ex( PCAP_SRC_IF_STRING, NULL, &m_deviceList, errBuff ) == -1 )
 	{
@@ -61,6 +66,10 @@ bool PacketSniffer::OpenDevice( int deviceIndex)
 		if( m_deviceHandle )
 		{
 			cout << "Capture session started on device: " << m_device->name << endl;
+
+			if( strlen( filterStr ) > 0 )
+				CompileAndSetIPV4Filter( m_device );
+
 			return true;
 		}
 		else
@@ -80,6 +89,7 @@ bool PacketSniffer::CaptureNextPacket()
 	if( retValue == 1 )
 	{
 		cout << "Captured packet with length: " << packetHeader->len << endl;
+		//
 	}
 	else if( retValue == -1 )
 	{
@@ -90,25 +100,46 @@ bool PacketSniffer::CaptureNextPacket()
 	return true;
 }
 
-pcap_if_t* PacketSniffer::GetDevice( int deviceIndex)
+void PacketSniffer::CloseCurrentSession()
 {
-	m_device = m_deviceList;
-	//traverse to the desired index of the device we will return
-	for( int i = 0; m_device!=NULL; i++)
+	if( m_deviceHandle )
 	{
-		if( i == deviceIndex)
-			return m_device;
-
-		m_device = m_device->next;
+		pcap_close( m_deviceHandle );
+		m_deviceHandle = NULL;
 	}
-
-	//we didn't find the corresponding device
-	return NULL;
 }
 
-int PacketSniffer::GetDeviceCount()
+//Filters will only be applied for IPV4 addresses
+int PacketSniffer::CompileAndSetIPV4Filter(pcap_if_t *device )
 {
-	return m_deviceCount;
+	u_int netmask;
+	struct bpf_program filterProgram;
+
+	if( device->addresses != NULL )
+	{
+		pcap_addr_t *address;
+		//Find IPV4 netmask 
+		for( address = device->addresses; address; address = address->next )
+		{
+			if( address->addr->sa_family == AF_INET )
+				netmask = ((struct sockaddr_in*)(address->netmask))->sin_addr.S_un.S_addr;
+		}
+	}
+
+	//compile filter
+	if( pcap_compile( m_deviceHandle, &filterProgram, filterStr, 1, netmask) < 0 )
+	{
+		cout << "Unable to compile the packet filter. Check syntax. " << endl;
+		return -1;
+	}
+	//set filter
+	if( pcap_setfilter( m_deviceHandle, &filterProgram ) < 0 )
+	{
+		cout << "Error setting filter" << endl;
+		return -1;
+	}
+
+	return 1;
 }
 
 void PacketSniffer::DisplayAllDevices()
@@ -117,6 +148,28 @@ void PacketSniffer::DisplayAllDevices()
 	m_device = m_deviceList;
 	
 	DisplayDevices( m_device, 1 );
+}
+
+void PacketSniffer::SetFilter( char* filter )
+{
+	for( int i = 0; i < (int)strlen(filter); i++)
+	{
+		filterStr[i] = filter[i];
+	}
+
+	//Null terminate
+	filterStr[strlen(filter)] = '\0';
+}
+
+void PacketSniffer::ClearFilter()
+{
+	if( strlen( filterStr) > 0 )
+	{
+		for( int i = 0; i < (int)strlen(filterStr); i++)
+		{
+			filterStr[i] = '\0';
+		}
+	}
 }
 
 //Go through linked list of devices to display the name and description of each device
@@ -154,7 +207,9 @@ void PacketSniffer::DisplayDeviceInformation( int deviceNumber )
 			{
 				//IPV4 family, note destination address might be null if device interface isn't a point-to-point interface
 				case AF_INET:
+					cout << "-----------------------------------------------------" << endl;
 					cout << "Address Family Name: AF_INET" << endl;
+					cout << "-----------------------------------------------------" << endl;
 					if( address->addr)
 						cout << "Address: " << iptostr( ((struct sockaddr_in*)address->addr)->sin_addr.S_un.S_addr) << endl;
 					if( address->netmask)
@@ -167,9 +222,11 @@ void PacketSniffer::DisplayDeviceInformation( int deviceNumber )
 				//IPV6 family
 				case AF_INET6:
 					char ip6str[128];
+					cout << "-----------------------------------------------------" << endl;
 					cout << "Address Family Name: AF_INET6" << endl;
+					cout << "-----------------------------------------------------" << endl;
 					if( address->addr )
-						cout << "Address: " << ip6tostr( address->addr, ip6str, sizeof( ip6str ) ) << endl;
+						cout << "IPv6 Address: " << ip6tostr( address->addr, ip6str, sizeof( ip6str ) ) << endl;
 					break;
 				default:
 					cout << "Address family unknown";
@@ -177,6 +234,27 @@ void PacketSniffer::DisplayDeviceInformation( int deviceNumber )
 			}
 		}
 	}
+}
+
+pcap_if_t* PacketSniffer::GetDevice( int deviceIndex)
+{
+	m_device = m_deviceList;
+	//traverse to the desired index of the device we will return
+	for( int i = 0; m_device!=NULL; i++)
+	{
+		if( i == deviceIndex)
+			return m_device;
+
+		m_device = m_device->next;
+	}
+
+	//we didn't find the corresponding device
+	return NULL;
+}
+
+int PacketSniffer::GetDeviceCount()
+{
+	return m_deviceCount;
 }
 
 char* PacketSniffer::iptostr( u_long ip)
