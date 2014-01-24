@@ -1,10 +1,5 @@
 #include "SnifferClient.h"
 
-#include <iostream>
-#include <string>
-
-using namespace std;
-
 int main()
 {
 	//The client has a handle to the sniffer manager to provide a layer of abstraction
