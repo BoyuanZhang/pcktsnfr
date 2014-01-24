@@ -88,8 +88,7 @@ bool PacketSniffer::CaptureNextPacket()
 	//output packet information... for now just output the length
 	if( retValue == 1 )
 	{
-		cout << "Captured packet with length: " << packetHeader->len << endl;
-		//
+		PacketHandler( packetHeader, packetData );
 	}
 	else if( retValue == -1 )
 	{
@@ -98,6 +97,44 @@ bool PacketSniffer::CaptureNextPacket()
 	}
 
 	return true;
+}
+
+void PacketSniffer::PacketHandler( const struct pcap_pkthdr *header, const u_char *data )
+{
+	//Interperates information on each packet passed in
+	//ethhdr *eh;
+	ipv4hdr *ih;
+	//udphdr *uh;
+	//tcphdr *th;
+
+	//Retrieve position of the IP header
+	//convert whatever is at address position data + size_ethernet (which is the ip header) into our defined structure for a ipv4 header
+	ih = (ipv4hdr *)(data + SIZE_ETHERNET);
+	
+	//interperate packet based on protocol
+	switch( ih->protocol )
+	{
+		case 6:
+			//TCP Packet
+			cout << "Handling TCP Packet of length: " << header->len;
+			HandleTCPPacket();
+			break;
+		case 17:
+			//UDP Packet
+			cout << "Handling UDP Packet of length: " << header->len;
+			HandleUDPPacket();
+			break;
+	}
+}
+
+void PacketSniffer::HandleTCPPacket()
+{
+
+}
+
+void PacketSniffer::HandleUDPPacket()
+{
+
 }
 
 void PacketSniffer::CloseCurrentSession()
