@@ -1,6 +1,3 @@
-//use an include to avoid PCH warning
-#include <string.h> 
-
 namespace FilterUtility
 {
 	//default filter
