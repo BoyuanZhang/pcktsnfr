@@ -1,5 +1,5 @@
 #include <iostream>
-#include <pcap.h>
+#include "Headers.h"
 
 using namespace std;
 
@@ -34,6 +34,9 @@ class PacketSniffer
 		char *ip6tostr( struct sockaddr *sockaddr, char *address, int addrlen );
 		//Setting filters on packets
 		int CompileAndSetIPV4Filter(pcap_if_t *device );
+		void PacketHandler( const struct pcap_pkthdr *header, const u_char *data );
+		void HandleUDPPacket();
+		void HandleTCPPacket();
 	public: 
 		PacketSniffer();
 		~PacketSniffer();
