@@ -9,7 +9,9 @@ C++ Packet sniffer for processing network traffic.
 			- Address family name, IP address in network, Net mask, Subnet, Broadcast address
 			  Destination Address
 	
-	- Able to filter packets with a user input filtering expression ("ip and tcp") expression to
+	- Able to filter packets with a user input filtering expression for example, ("ip and tcp") expression to
 	  keep only packets that are both TCP and IPV4
+	  
+	- Implemented interepretation of the following protocols: TCP, UDP
 
 Project started for the learning purposes of WinPcap, and network programming
