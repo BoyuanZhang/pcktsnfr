@@ -104,8 +104,6 @@ void PacketSniffer::PacketHandler( const struct pcap_pkthdr *header, const u_cha
 	//Interperates information on each packet passed in
 	//ethhdr *eh;
 	ipv4hdr *ih;
-	//udphdr *uh;
-	//tcphdr *th;
 
 	//Retrieve position of the IP header
 	//convert whatever is at address position data + size_ethernet (which is the ip header) into our defined structure for a ipv4 header
@@ -116,25 +114,56 @@ void PacketSniffer::PacketHandler( const struct pcap_pkthdr *header, const u_cha
 	{
 		case 6:
 			//TCP Packet
-			cout << "Handling TCP Packet of length: " << header->len;
-			HandleTCPPacket();
+			cout << "Handling TCP Packet of length: " << header->len << endl;
+			HandleTCPPacket( ih );
 			break;
 		case 17:
 			//UDP Packet
-			cout << "Handling UDP Packet of length: " << header->len;
-			HandleUDPPacket();
+			cout << "Handling UDP Packet of length: " << header->len << endl;
+			HandleUDPPacket( ih );
 			break;
 	}
 }
 
-void PacketSniffer::HandleTCPPacket()
+void PacketSniffer::HandleTCPPacket( ipv4hdr *ih)
 {
+	tcphdr *th;
+	u_int ip_len;
 
+	ip_len = ( ih->ver_ihl & 0xf ) * 4;
+
+	th = (tcphdr*)( (u_char*)ih + ip_len);
+
+	//convert from network byte order to host byte order
+	u_short srcport = ntohs( th->srcport );
+	u_short dstport = ntohs( th->dstport );
+
+	printf( "src - %d.%d.%d.%d:%d -> dst - %d.%d.%d.%d:%d\n",
+		ih->src.byte1, ih->src.byte2, ih->src.byte3, ih->src.byte4, srcport,
+		ih->dst.byte1, ih->dst.byte2, ih->dst.byte3, ih->dst.byte4, dstport
+		);
 }
 
-void PacketSniffer::HandleUDPPacket()
+void PacketSniffer::HandleUDPPacket( ipv4hdr *ih)
 {
+	udphdr *uh;
+	u_int ip_len;
+	
+	//get header length (in units of 32 bits), which is bottom 4 bits of ver_ihl, and convert to bytes
+	ip_len = ( ih->ver_ihl & 0xf ) * 4;
 
+	uh = (udphdr*)( (u_char*)ih + ip_len );
+
+	//convert from network byte order to host byte order
+	u_short srcport = ntohs( uh->srcport );
+	u_short dstport = ntohs( uh->dstport );
+
+	//print source and destination ip's and their corresponding ports in host byte order
+	//using printf here to easily outprint the ip addresses in u_char format
+	printf( "src - %d.%d.%d.%d:%d -> dst - %d.%d.%d.%d:%d\n",
+		ih->src.byte1, ih->src.byte2, ih->src.byte3, ih->src.byte4, srcport,
+		ih->dst.byte1, ih->dst.byte2, ih->dst.byte3, ih->dst.byte4, dstport
+		);
 }
 
 void PacketSniffer::CloseCurrentSession()
