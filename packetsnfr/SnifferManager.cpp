@@ -3,6 +3,10 @@
 SnifferManager::SnifferManager()
 {
 	m_sniffer = new PacketSniffer();
+	//Set default bandwidth recording to false
+	m_recordBandwidth = false;
+	//Set initial bandwidth count to 0
+	m_totalBandwidth = 0;
 }
 
 SnifferManager::~SnifferManager()
@@ -44,7 +48,26 @@ void SnifferManager::DisplayDeviceInformation( int deviceIndex )
 
 void SnifferManager::CloseSession()
 {
+	//Close the session, and if bandwidth recording was enabled, we out put the total
+	//captured bandwidth
 	m_sniffer->CloseCurrentSession();
+
+	if( m_recordBandwidth )
+		printf( "\nTotal bandwidth usage for this session is: %f MB\n", m_totalBandwidth/1000 );
+}
+
+void SnifferManager::ToggleRecord()
+{
+	if( m_recordBandwidth )
+	{
+		m_recordBandwidth = false;
+		cout << "Bandwidth recording is now off." << endl;
+	}
+	else
+	{
+		m_recordBandwidth = true;
+		cout << "Bandwidth recording is now on." << endl;
+	}
 }
 
 void SnifferManager::SetFilter( char* filter )
@@ -59,7 +82,8 @@ void SnifferManager::ClearFilter()
 
 bool SnifferManager::GetPacket()
 {
-	if( m_sniffer->CaptureNextPacket())
+	//passing private variable m_totalBandwidth by reference here
+	if( m_sniffer->CaptureNextPacket(m_recordBandwidth, m_totalBandwidth))
 		return true;
 
 	return false;
