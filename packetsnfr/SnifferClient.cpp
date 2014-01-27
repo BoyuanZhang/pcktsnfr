@@ -69,6 +69,9 @@ void SnifferClient::Menu()
 				}
 				break;
 			case 6:
+				m_manager->ToggleRecord();
+				break;
+			case 7:
 				quit = true;
 				break;
 			default:
@@ -90,5 +93,6 @@ void SnifferClient::DisplayMenu()
 	cout << "3: Set a filter for packet capture" << endl;
 	cout << "4: Clear packet filter" << endl;
 	cout << "5: Begin Capturing packets on device" << endl;
-	cout << "6: Quit"  << endl;
+	cout << "6: Toggle Bandwidth capture" << endl;
+	cout << "7: Quit"  << endl;
 }
