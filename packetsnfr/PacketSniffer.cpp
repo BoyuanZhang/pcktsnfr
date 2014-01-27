@@ -81,13 +81,18 @@ bool PacketSniffer::OpenDevice( int deviceIndex)
 	return false;
 }
 
-bool PacketSniffer::CaptureNextPacket()
+bool PacketSniffer::CaptureNextPacket(bool record, double &totalBandwidth)
 {	
 	int retValue = pcap_next_ex( m_deviceHandle, &packetHeader, &packetData );
 	
-	//output packet information... for now just output the length
+	//Interperate packet information
 	if( retValue == 1 )
 	{
+		//If bandwidth recording is turned on we add the current packet length to the total
+		//before sending the packet to be interperated.
+		if( record )
+			totalBandwidth += (double)packetHeader->len / 1000;
+
 		PacketHandler( packetHeader, packetData );
 	}
 	else if( retValue == -1 )
@@ -102,14 +107,17 @@ bool PacketSniffer::CaptureNextPacket()
 void PacketSniffer::PacketHandler( const struct pcap_pkthdr *header, const u_char *data )
 {
 	//Interperates information on each packet passed in
+	//Ethernet header
 	//ethhdr *eh;
+	//IP header
 	ipv4hdr *ih;
 
 	//Retrieve position of the IP header
 	//convert whatever is at address position data + size_ethernet (which is the ip header) into our defined structure for a ipv4 header
 	ih = (ipv4hdr *)(data + SIZE_ETHERNET);
 	
-	//interperate packet based on protocol
+	//Interperate packet based on protocol
+	//Eventually each interperated packet should be written to an offline dump file
 	switch( ih->protocol )
 	{
 		case 6:
@@ -191,17 +199,19 @@ int PacketSniffer::CompileAndSetIPV4Filter(pcap_if_t *device )
 				netmask = ((struct sockaddr_in*)(address->netmask))->sin_addr.S_un.S_addr;
 		}
 	}
-
+	//Try to compile, and set filters, if unable to do either, then clear the current filter
 	//compile filter
 	if( pcap_compile( m_deviceHandle, &filterProgram, filterStr, 1, netmask) < 0 )
 	{
 		cout << "Unable to compile the packet filter. Check syntax. " << endl;
+		ClearFilter();
 		return -1;
 	}
 	//set filter
 	if( pcap_setfilter( m_deviceHandle, &filterProgram ) < 0 )
 	{
 		cout << "Error setting filter" << endl;
+		ClearFilter();
 		return -1;
 	}
 
