@@ -13,5 +13,7 @@ C++ Packet sniffer for processing network traffic.
 	  keep only packets that are both TCP and IPV4
 	  
 	- Implemented interepretation of the following protocols: TCP, UDP
+	
+	- Implemented Bandwidth monitoring
 
 Project started for the learning purposes of WinPcap, and network programming
