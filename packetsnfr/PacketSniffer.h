@@ -35,8 +35,8 @@ class PacketSniffer
 		//Setting filters on packets
 		int CompileAndSetIPV4Filter(pcap_if_t *device );
 		void PacketHandler( const struct pcap_pkthdr *header, const u_char *data );
-		void HandleUDPPacket();
-		void HandleTCPPacket();
+		void HandleUDPPacket( ipv4hdr *ih);
+		void HandleTCPPacket( ipv4hdr *ih);
 	public: 
 		PacketSniffer();
 		~PacketSniffer();
@@ -44,7 +44,7 @@ class PacketSniffer
 		//Try to open the device specified by the user
 		bool OpenDevice( int deviceIndex );
 		//Listen in on a device, if an exception occurs, return an error code
-		bool CaptureNextPacket();
+		bool CaptureNextPacket( bool record, double &totalBandwidth);
 		int GetDeviceCount();
 		//Recursively gets all device names and descriptions
 		void DisplayAllDevices();
