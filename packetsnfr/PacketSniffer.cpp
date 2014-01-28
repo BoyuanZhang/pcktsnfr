@@ -70,6 +70,21 @@ bool PacketSniffer::OpenDevice( int deviceIndex)
 			if( strlen( filterStr ) > 0 )
 				CompileAndSetIPV4Filter( m_device );
 
+			//Get devices IPV4 address
+			pcap_addr_t *address = GetIPV4Addr( m_device );
+			if( address )
+			{
+				u_long ip = ((struct sockaddr_in*)address->addr)->sin_addr.S_un.S_addr;
+				u_char *p = (u_char*)&ip;
+
+				m_deviceIPV4addr[0] = p[0];
+				m_deviceIPV4addr[1] = p[1];
+				m_deviceIPV4addr[2] = p[2];
+				m_deviceIPV4addr[3] = p[3];
+			}
+			else
+				ClearDeviceAddr();
+
 			return true;
 		}
 		else
@@ -88,12 +103,7 @@ bool PacketSniffer::CaptureNextPacket(bool record, double &totalBandwidth)
 	//Interperate packet information
 	if( retValue == 1 )
 	{
-		//If bandwidth recording is turned on we add the current packet length to the total
-		//before sending the packet to be interperated.
-		if( record )
-			totalBandwidth += (double)packetHeader->len / 1000;
-
-		PacketHandler( packetHeader, packetData );
+		PacketHandler( packetHeader, packetData, record, totalBandwidth );
 	}
 	else if( retValue == -1 )
 	{
@@ -104,7 +114,7 @@ bool PacketSniffer::CaptureNextPacket(bool record, double &totalBandwidth)
 	return true;
 }
 
-void PacketSniffer::PacketHandler( const struct pcap_pkthdr *header, const u_char *data )
+void PacketSniffer::PacketHandler( const struct pcap_pkthdr *header, const u_char *data, bool record, double &totalBandwidth )
 {
 	//Interperates information on each packet passed in
 	//Ethernet header
@@ -116,9 +126,19 @@ void PacketSniffer::PacketHandler( const struct pcap_pkthdr *header, const u_cha
 	//convert whatever is at address position data + size_ethernet (which is the ip header) into our defined structure for a ipv4 header
 	ih = (ipv4hdr *)(data + SIZE_ETHERNET);
 	
+	//If bandwidth recording is turned on we add the current packet length to the total, if the source or destination address is equal to the device address
+	//before sending the packet to be interperated. Currently bandwidth monitoring only supports IPV4 packets
+	if( record )
+	{
+		//if the source or destination address is equal to the current devices addresses we add it to our total bandwidth
+		if( (ih->src.byte1 == m_deviceIPV4addr[0] && ih->src.byte2 == m_deviceIPV4addr[1] && ih->src.byte3 == m_deviceIPV4addr[2] && ih->src.byte4 == m_deviceIPV4addr[3]) ||
+			(ih->dst.byte1 == m_deviceIPV4addr[0] && ih->dst.byte2 == m_deviceIPV4addr[1] && ih->dst.byte3 == m_deviceIPV4addr[2] && ih->dst.byte4 == m_deviceIPV4addr[3]) )
+				totalBandwidth += (double)packetHeader->len / 1000;
+	}
+
 	//Interperate packet based on protocol
 	//Eventually each interperated packet should be written to an offline dump file
-	switch( ih->protocol )
+	/*switch( ih->protocol )
 	{
 		case 6:
 			//TCP Packet
@@ -130,7 +150,7 @@ void PacketSniffer::PacketHandler( const struct pcap_pkthdr *header, const u_cha
 			cout << "Handling UDP Packet of length: " << header->len << endl;
 			HandleUDPPacket( ih );
 			break;
-	}
+	}*/
 }
 
 void PacketSniffer::HandleTCPPacket( ipv4hdr *ih)
@@ -189,16 +209,10 @@ int PacketSniffer::CompileAndSetIPV4Filter(pcap_if_t *device )
 	u_int netmask;
 	struct bpf_program filterProgram;
 
-	if( device->addresses != NULL )
-	{
-		pcap_addr_t *address;
-		//Find IPV4 netmask 
-		for( address = device->addresses; address; address = address->next )
-		{
-			if( address->addr->sa_family == AF_INET )
-				netmask = ((struct sockaddr_in*)(address->netmask))->sin_addr.S_un.S_addr;
-		}
-	}
+	pcap_addr_t *address = GetIPV4Addr( device );
+	if( address )
+		netmask = ((struct sockaddr_in*)(address->netmask))->sin_addr.S_un.S_addr;
+
 	//Try to compile, and set filters, if unable to do either, then clear the current filter
 	//compile filter
 	if( pcap_compile( m_deviceHandle, &filterProgram, filterStr, 1, netmask) < 0 )
@@ -331,6 +345,30 @@ pcap_if_t* PacketSniffer::GetDevice( int deviceIndex)
 int PacketSniffer::GetDeviceCount()
 {
 	return m_deviceCount;
+}
+
+void PacketSniffer::ClearDeviceAddr()
+{
+	m_deviceIPV4addr[0] = '0';
+	m_deviceIPV4addr[1] = '0';
+	m_deviceIPV4addr[2] = '0';
+	m_deviceIPV4addr[3] = '0';
+}
+
+pcap_addr_t* PacketSniffer::GetIPV4Addr( pcap_if_t *device )
+{
+	if( device->addresses != NULL )
+	{
+		pcap_addr_t *address;
+		//Find IPV4 address
+		for( address = device->addresses; address; address = address->next )
+		{
+			if( address->addr->sa_family == AF_INET )
+				return address;
+		}
+	}
+
+	return NULL;
 }
 
 char* PacketSniffer::iptostr( u_long ip)
