@@ -14,7 +14,8 @@ class PacketSniffer
 		//device list and list items of all devices that can be used to sniff traffic
 		pcap_if_t *m_deviceList;
 		pcap_if_t *m_device;
-
+		//holds current devices IPV4 address
+		u_char m_deviceIPV4addr[4];
 		//pointer to the winpcap packet header structure
 		struct pcap_pkthdr *packetHeader;
 		//pointer to the data returned in the packet
@@ -34,9 +35,12 @@ class PacketSniffer
 		char *ip6tostr( struct sockaddr *sockaddr, char *address, int addrlen );
 		//Setting filters on packets
 		int CompileAndSetIPV4Filter(pcap_if_t *device );
-		void PacketHandler( const struct pcap_pkthdr *header, const u_char *data );
+		void PacketHandler( const struct pcap_pkthdr *header, const u_char *data, bool record, double &totalBandwidth );
 		void HandleUDPPacket( ipv4hdr *ih);
 		void HandleTCPPacket( ipv4hdr *ih);
+		void ClearDeviceAddr();
+
+		pcap_addr_t* GetIPV4Addr(pcap_if_t* device);
 	public: 
 		PacketSniffer();
 		~PacketSniffer();
