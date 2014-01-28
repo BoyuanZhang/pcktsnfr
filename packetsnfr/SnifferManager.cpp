@@ -54,6 +54,8 @@ void SnifferManager::CloseSession()
 
 	if( m_recordBandwidth )
 		printf( "\nTotal bandwidth usage for this session is: %f MB\n", m_totalBandwidth/1000 );
+	//reset total bandwidth
+	m_totalBandwidth = 0;
 }
 
 void SnifferManager::ToggleRecord()
