@@ -2,7 +2,7 @@ By: Boyuan Zhang
 
 C++ Packet sniffer for processing network traffic.
 
-	- Is able to sniff packets on a network interface (only returns packet length at the moment)
+	- Is able to sniff packets on a network interface
 	
 	- Able to list advanced information of all network device interfaces
 		- Address family information (IPV4, IPV6)
